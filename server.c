@@ -47,15 +47,32 @@ bool exists(const char *filename)
     return access(filename, F_OK) == 0;
 }
 
+void get_word_count(char *word_string)
+{
+    bool end = 0;
+    for (int i = 0; i < BUF_SIZE; i++)
+    {
+        if (word_string[i] == ' ')
+        {
+            end = 1;
+        }
+
+        if (end == 1)
+        {
+            word_string[i] = '\0';
+        }
+    }
+}
+
 int main(void)
 {
     key_t key = 1;
     int msg_q_id;
-
+    // Generate key using ftok
     if ((key = ftok("server.c", 1)) == -1)
     {
         perror("ftok Failed\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     printf("ftok key: %d\n", key);
@@ -63,7 +80,7 @@ int main(void)
     if ((msg_q_id = msgget(key, PERMS | IPC_CREAT)) == -1)
     {
         perror("Failed to connect to Message Queue\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     printf("msg_q_id: %d\n", msg_q_id);
@@ -87,9 +104,10 @@ int main(void)
             printf("%d\n", errno);
             break;
         }
-
+        // Has been sent by cleanup
         if (msg_rcv.msg.client_id == 0)
         {
+            // Wait for all childs to terminate
             while (wait(NULL) > 0)
                 ;
             break;
@@ -97,6 +115,7 @@ int main(void)
 
         printf("Client %d : %s \n", msg_rcv.msg.client_id, msg_rcv.msg.text);
 
+        // Check if fork was created successfully
         if ((pid = fork()) < 0)
         {
             perror("Fork failed");
@@ -104,30 +123,34 @@ int main(void)
             exit(1);
         }
 
+        // Parent
         if (pid > 0)
         {
-
+            // Make a pipe and assign required choice, client id and message
             struct pipe_msg pipe_msg_snd;
             pipe_msg_snd.client_id = msg_rcv.msg.client_id;
             pipe_msg_snd.choice = msg_rcv.msg.choice;
             strncpy(pipe_msg_snd.ptext, msg_rcv.msg.text, BUF_SIZE);
-
+            // Write to pipe
             if (write(fd[1], &(pipe_msg_snd), sizeof(pipe_msg_snd)) == -1)
             {
-                perror("Pipe write");
+                perror("Could not write to pipe");
                 cleanup(msg_q_id, fd[0], fd[1]);
                 exit(1);
             }
         }
         else if (pid == 0)
         {
-
+            // Declare pipe
             struct pipe_msg pipe_msg_rcv;
+
+            // Read from the pipe here
             if (read(fd[0], &pipe_msg_rcv, sizeof(pipe_msg_rcv)) == -1)
             {
                 perror("Pipe read");
                 exit(1);
             }
+            // Assign client id and choice received from the pipe
             int choice = pipe_msg_rcv.choice, client_id = pipe_msg_rcv.client_id;
             printf("client_id: %d   choice: %d\n", client_id, choice);
 
@@ -137,33 +160,36 @@ int main(void)
 
             if (choice == 1)
             {
+                // Choice = 1
+                // Make string "Hello" and send the message to message queue
                 char hello[BUF_SIZE] = "Hello";
                 msg_snd.msg.choice = choice;
                 strncpy(msg_snd.msg.text, hello, BUF_SIZE);
-                if ((msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0)) == -1)
+                if ((msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0)) == -1) // check if message is sent
                 {
-                    perror("msgsnd");
+                    perror("Error in sending message");
                     printf("%d\n", errno);
                     exit(1);
                 }
             }
             else if (choice == 2)
             {
-
+                // Checking if the file exists or not and correspondingly send the response
                 int pid2;
                 int fd2[2];
                 char filename[BUF_SIZE];
                 strncpy(filename, pipe_msg_rcv.ptext, BUF_SIZE);
 
-                // check for existence of file
+                // Check for existence of file
                 if (!exists(filename))
                 {
                     printf("File doesn't exist\n");
                     char msg[BUF_SIZE] = "File not found";
+                    // Copy message to be sent to the message queue
                     strncpy(msg_snd.msg.text, msg, BUF_SIZE);
-                    if ((msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0)) == -1)
+                    if ((msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0)) == -1) // Check if message is sent
                     {
-                        perror("msgsnd");
+                        perror("Error in sending message");
                         printf("%d\n", errno);
                         exit(1);
                     }
@@ -172,30 +198,33 @@ int main(void)
                 {
                     printf("File exists\n");
                     char msg[BUF_SIZE] = "File exists";
+                    // Copy message to be sent to the message queue
                     strncpy(msg_snd.msg.text, msg, BUF_SIZE);
-                    if ((msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0)) == -1)
+                    if ((msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0)) == -1) // Check if message is sent
                     {
-                        perror("msgsnd");
+                        perror("Error in sending message");
                         printf("%d\n", errno);
-                        exit(1);
+                        exit(EXIT_FAILURE);
                     }
                 }
             }
             else if (choice == 3)
             {
-
+                // Declare a pipe to read and write message from execlp()
                 int pid3;
                 int fd3[2];
                 char filename[BUF_SIZE];
+                // copy the received filename to local variable 'filename'
                 strncpy(filename, pipe_msg_rcv.ptext, BUF_SIZE);
 
-                // check for existence of file
+                // Check for existence of file
                 if (!exists(filename))
                 {
                     printf("File doesn't exist\n");
                     char msg[BUF_SIZE] = "File not found";
+                    // Send message that file is not found in the msg queue
                     strncpy(msg_snd.msg.text, msg, BUF_SIZE);
-                    if ((msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0)) == -1)
+                    if ((msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0)) == -1) // Check if message is sent
                     {
                         perror("msgsnd");
                         printf("%d\n", errno);
@@ -205,7 +234,7 @@ int main(void)
                 else
                 {
 
-                    if (pipe(fd3) == -1)
+                    if (pipe(fd3) == -1) // Creating a pipe and checking if the pipe is created
                     {
                         perror("pipe creation failed");
                     }
@@ -235,27 +264,18 @@ int main(void)
 
                         ssize_t word_count = read(fd3[0], word_string, BUF_SIZE);
 
+                        // Check if the string was read correctly
                         if (word_count < 0)
                         {
                             perror("Failed to read from pipe");
                             exit(1);
                         }
+                        // Extract word count from string
 
-                        bool end = 0;
-                        for (int i = 0; i < BUF_SIZE; i++)
-                        {
-                            if (word_string[i] == ' ')
-                            {
-                                end = 1;
-                            }
-
-                            if (end == 1)
-                            {
-                                word_string[i] = '\0';
-                            }
-                        }
+                        get_word_count(word_string);
                     }
 
+                    // Copy the string to the message to be sent and call the message send function
                     strncpy(msg_snd.msg.text, word_string, BUF_SIZE);
                     if ((msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0)) == -1)
                     {
