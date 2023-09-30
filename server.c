@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define BUF_SIZE 200
+#define BUF_SIZE 300
 #define PERMS 0644
 
 struct message
@@ -93,12 +93,6 @@ int main(void)
         exit(EXIT_FAILURE);
     }
 
-    /*
-    UNCOMMENT FOR DEBUGGING
-    printf("ftok key: %d\n", key);
-    printf("msg_q_id: %d\n", msg_q_id);
-    */
-
     // Struct variable to receive the message from Message Queue
     struct msg_buf msg_rcv;
 
@@ -174,11 +168,6 @@ int main(void)
             }
 
             int choice = pipe_msg_rcv.choice, client_id = pipe_msg_rcv.client_id;
-
-            /*
-            UNCOMMENT FOR DEBUGGING
-            printf("client_id: %d   choice: %d\n", client_id, choice);
-            */
 
             // Struct Variable to send the message to message queues
             struct msg_buf msg_snd;
@@ -310,6 +299,18 @@ int main(void)
                         printf("%d\n", errno);
                         exit(EXIT_FAILURE);
                     }
+                }
+            }
+            else // Choice not between 1 and 3. Invalid Operation
+            {
+                // Send message "Invalid Operation"
+                char invalid_op[BUF_SIZE] = "Invalid Operation";
+                strncpy(msg_snd.msg.text, invalid_op, BUF_SIZE);
+                if ((msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0)) == -1)
+                {
+                    perror("Error in sending message");
+                    printf("%d\n", errno);
+                    exit(EXIT_FAILURE);
                 }
             }
 

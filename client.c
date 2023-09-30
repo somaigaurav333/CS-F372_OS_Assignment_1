@@ -9,7 +9,7 @@
 #include <sys/wait.h>
 #include <string.h>
 
-#define BUF_SIZE 200
+#define BUF_SIZE 300
 #define PERMS 0644
 
 struct message
@@ -55,12 +55,6 @@ int main(void)
         perror("Failed to connect to Message Queue\n");
         exit(EXIT_FAILURE);
     }
-
-    /*
-    UNCOMMENT FOR DEBUGGING
-    printf("ftok key: %d\n", key);
-    printf("msg_q_id: %d\n", msg_q_id);
-    */
 
     // Struct Variable to send the message into message queue
     struct msg_buf msg_snd;
