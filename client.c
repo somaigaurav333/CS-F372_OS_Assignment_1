@@ -19,6 +19,7 @@ struct message
     char text[BUF_SIZE];
 };
 
+// Message Queue Buffer
 struct msg_buf
 {
     long mtype;
@@ -40,15 +41,17 @@ int main(void)
         exit(EXIT_FAILURE);
     }
 
-    printf("ftok key: %d\n", key);
-
     if ((msg_q_id = msgget(key, PERMS)) == -1)
     {
         perror("Failed to connect to Message Queue\n");
         exit(EXIT_FAILURE);
     }
 
+    /*
+    UNCOMMENT FOR DEBUGGING
+    printf("ftok key: %d\n", key);
     printf("msg_q_id: %d\n", msg_q_id);
+    */
 
     struct msg_buf msg_snd;
     msg_snd.msg.client_id = client_id;
