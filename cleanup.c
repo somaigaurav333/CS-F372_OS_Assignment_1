@@ -33,7 +33,7 @@ int main(void)
     if ((key = ftok("server.c", 1)) == -1)
     {
         perror("ftok Failed\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     printf("ftok key: %d\n", key);
@@ -41,7 +41,7 @@ int main(void)
     if ((msg_q_id = msgget(key, PERMS)) == -1)
     {
         perror("Failed to connect to Message Queue\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     printf("msg_q_id: %d\n", msg_q_id);

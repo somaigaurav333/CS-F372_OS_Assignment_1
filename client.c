@@ -37,7 +37,7 @@ int main(void)
     if ((key = ftok("server.c", 1)) == -1)
     {
         perror("ftok error");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     printf("ftok key: %d\n", key);
@@ -45,7 +45,7 @@ int main(void)
     if ((msg_q_id = msgget(key, PERMS)) == -1)
     {
         perror("Failed to connect to Message Queue\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     printf("msg_q_id: %d\n", msg_q_id);
@@ -76,7 +76,7 @@ int main(void)
             if (msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0) == -1)
             {
                 perror("msgsnd");
-                exit(1);
+                exit(EXIT_FAILURE);
             }
 
             struct msg_buf msg_rcv;
@@ -85,7 +85,7 @@ int main(void)
             {
                 perror("msgrcv error ");
                 printf("%d\n", errno);
-                exit(1);
+                exit(EXIT_FAILURE);
             }
 
             printf("Server: %s\n", msg_rcv.msg.text);
@@ -101,7 +101,7 @@ int main(void)
             if (msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0) == -1)
             {
                 perror("msgsnd");
-                exit(1);
+                exit(EXIT_FAILURE);
             }
 
             struct msg_buf msg_rcv;
@@ -110,7 +110,7 @@ int main(void)
             {
                 perror("msgrcv error ");
                 printf("%d\n", errno);
-                exit(1);
+                exit(EXIT_FAILURE);
             }
 
             printf("Server: %s\n", msg_rcv.msg.text);
@@ -126,7 +126,7 @@ int main(void)
             if (msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0) == -1)
             {
                 perror("msgsnd");
-                exit(1);
+                exit(EXIT_FAILURE);
             }
 
             struct msg_buf msg_rcv;
@@ -135,7 +135,7 @@ int main(void)
             {
                 perror("msgrcv error ");
                 printf("%d\n", errno);
-                exit(1);
+                exit(EXIT_FAILURE);
             }
 
             printf("Server: %s\n", msg_rcv.msg.text);

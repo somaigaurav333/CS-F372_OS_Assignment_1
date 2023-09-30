@@ -93,7 +93,7 @@ int main(void)
     {
         fprintf(stderr, "Pipe Failed");
         msgctl(msg_q_id, IPC_RMID, NULL);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     while (pid > 0)
@@ -120,7 +120,7 @@ int main(void)
         {
             perror("Fork failed");
             cleanup(msg_q_id, fd[0], fd[1]);
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 
         // Parent
@@ -136,7 +136,7 @@ int main(void)
             {
                 perror("Could not write to pipe");
                 cleanup(msg_q_id, fd[0], fd[1]);
-                exit(1);
+                exit(EXIT_FAILURE);
             }
         }
         else if (pid == 0)
@@ -148,7 +148,7 @@ int main(void)
             if (read(fd[0], &pipe_msg_rcv, sizeof(pipe_msg_rcv)) == -1)
             {
                 perror("Pipe read");
-                exit(1);
+                exit(EXIT_FAILURE);
             }
             // Assign client id and choice received from the pipe
             int choice = pipe_msg_rcv.choice, client_id = pipe_msg_rcv.client_id;
@@ -169,7 +169,7 @@ int main(void)
                 {
                     perror("Error in sending message");
                     printf("%d\n", errno);
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
             }
             else if (choice == 2)
@@ -191,7 +191,7 @@ int main(void)
                     {
                         perror("Error in sending message");
                         printf("%d\n", errno);
-                        exit(1);
+                        exit(EXIT_FAILURE);
                     }
                 }
                 else
@@ -228,7 +228,7 @@ int main(void)
                     {
                         perror("msgsnd");
                         printf("%d\n", errno);
-                        exit(1);
+                        exit(EXIT_FAILURE);
                     }
                 }
                 else
@@ -252,7 +252,7 @@ int main(void)
                         if (execlp("wc", "wc", "-w", filename, NULL) == -1)
                         {
                             perror("File does not exist");
-                            exit(1);
+                            exit(EXIT_FAILURE);
                         }
                     }
                     else
@@ -268,7 +268,7 @@ int main(void)
                         if (word_count < 0)
                         {
                             perror("Failed to read from pipe");
-                            exit(1);
+                            exit(EXIT_FAILURE);
                         }
                         // Extract word count from string
 
@@ -281,12 +281,12 @@ int main(void)
                     {
                         perror("msgsnd");
                         printf("%d\n", errno);
-                        exit(1);
+                        exit(EXIT_FAILURE);
                     }
                 }
             }
 
-            exit(0);
+            exit(EXIT_SUCCESS);
         }
     }
 
