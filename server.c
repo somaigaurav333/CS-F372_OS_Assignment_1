@@ -55,12 +55,6 @@ int exists(const char *filename)
 {
     int child_status;
     pid_t pid = fork();
-    int fd_temp[2];
-    if (pipe(fd_temp) == -1)
-    {
-        perror("Pipe creation failed");
-        return -1;
-    }
 
     if (pid < 0)
     {
@@ -70,15 +64,10 @@ int exists(const char *filename)
 
     if (pid == 0)
     {
-        // dup2(fd_temp[1], STDOUT_FILENO);
-        close(fd_temp[1]);
-        close(fd_temp[0]);
         execlp("ls", "ls", filename, NULL);
     }
     else
     {
-        close(fd_temp[1]);
-        close(fd_temp[0]);
         wait(&child_status);
 
         if (child_status == 0)
@@ -250,9 +239,10 @@ int main(void)
                 }
                 else // File exists
                 {
+                    printf("File exists\n\n");
+
                     char msg[BUF_SIZE] = "File exists";
                     strncpy(msg_snd.msg.text, msg, BUF_SIZE);
-
                     // Send the message to message queue
                     if ((msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0)) == -1)
                     {
@@ -270,14 +260,13 @@ int main(void)
                 strncpy(filename, pipe_msg_rcv.ptext, BUF_SIZE);
 
                 // Check if file exists
-
                 int file_exists = exists(filename);
                 if (file_exists == -1)
                 {
                     cleanup(msg_q_id, fd[0], fd[1]);
                     exit(EXIT_FAILURE);
                 }
-                else if (exists(filename) == 0) // File does not exist
+                else if (file_exists == 0) // File does not exist
                 {
                     char msg[BUF_SIZE] = "File not found";
                     strncpy(msg_snd.msg.text, msg, BUF_SIZE);
@@ -292,6 +281,8 @@ int main(void)
                 }
                 else
                 {
+                    printf("File exists\n");
+
                     // Declare a pipe to read output of execlp()
                     int pid3;
                     int fd3[2];
@@ -335,6 +326,7 @@ int main(void)
 
                         // Extract word count from execlp output
                         get_word_count(execlp_output);
+                        printf("Word count: %s\n\n", execlp_output);
                     }
 
                     // Send the word count message into message queue
