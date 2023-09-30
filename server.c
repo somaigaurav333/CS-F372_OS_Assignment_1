@@ -51,9 +51,43 @@ void cleanup(int msg_q_id, int fdr, int fdw)
 }
 
 // Function to check if a specified file exists
-bool exists(const char *filename)
+int exists(const char *filename)
 {
-    return access(filename, F_OK) == 0;
+    int child_status;
+    pid_t pid = fork();
+    int fd_temp[2];
+    if (pipe(fd_temp) == -1)
+    {
+        perror("Pipe creation failed");
+        return -1;
+    }
+
+    if (pid < 0)
+    {
+        perror("Fork failed");
+        return -1;
+    }
+
+    if (pid == 0)
+    {
+        // dup2(fd_temp[1], STDOUT_FILENO);
+        close(fd_temp[1]);
+        close(fd_temp[0]);
+        execlp("ls", "ls", filename, NULL);
+    }
+    else
+    {
+        close(fd_temp[1]);
+        close(fd_temp[0]);
+        wait(&child_status);
+
+        if (child_status == 0)
+        {
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 // Function to extract word count of file from execlp
@@ -107,7 +141,7 @@ int main(void)
         exit(EXIT_FAILURE);
     }
 
-    printf("Server started... \n");
+    printf("Server started... \n\n");
 
     while (pid > 0)
     {
@@ -130,7 +164,7 @@ int main(void)
         }
 
         // Print the text of message received
-        printf("Client %d : %s \n", msg_rcv.msg.client_id, msg_rcv.msg.text);
+        printf("Client %d:-\nChoice: %d\tMessage: %s  \n\n", msg_rcv.msg.client_id, msg_rcv.msg.choice, msg_rcv.msg.text);
 
         // Create a child server to unload the task upon
         if ((pid = fork()) < 0)
@@ -193,9 +227,15 @@ int main(void)
                 int pid2;
                 char filename[BUF_SIZE];
                 strncpy(filename, pipe_msg_rcv.ptext, BUF_SIZE);
-
                 // Check for file existence
-                if (!exists(filename)) // File does not exist
+
+                int file_exists = exists(filename);
+                if (file_exists == -1) // exists function returns an error
+                {
+                    cleanup(msg_q_id, fd[0], fd[1]);
+                    exit(EXIT_FAILURE);
+                }
+                else if (file_exists == 0) // File does not exist
                 {
                     char msg[BUF_SIZE] = "File not found";
                     strncpy(msg_snd.msg.text, msg, BUF_SIZE);
@@ -225,16 +265,24 @@ int main(void)
             else if (choice == 3) // Client choice is 3
             {
 
-                char filename[BUF_SIZE];
                 // copy the received filename to local variable 'filename'
+                char filename[BUF_SIZE];
                 strncpy(filename, pipe_msg_rcv.ptext, BUF_SIZE);
 
                 // Check if file exists
-                if (!exists(filename)) // Return error if file does not existss
+
+                int file_exists = exists(filename);
+                if (file_exists == -1)
+                {
+                    cleanup(msg_q_id, fd[0], fd[1]);
+                    exit(EXIT_FAILURE);
+                }
+                else if (exists(filename) == 0) // File does not exist
                 {
                     char msg[BUF_SIZE] = "File not found";
-
                     strncpy(msg_snd.msg.text, msg, BUF_SIZE);
+
+                    // Send the message to message queue
                     if ((msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0)) == -1)
                     {
                         perror("Error in sending message");
@@ -244,7 +292,6 @@ int main(void)
                 }
                 else
                 {
-
                     // Declare a pipe to read output of execlp()
                     int pid3;
                     int fd3[2];
@@ -275,7 +322,6 @@ int main(void)
                     {
                         // Wait for child to finish execution
                         wait(NULL);
-
                         close(fd3[1]);
 
                         ssize_t word_count = read(fd3[0], execlp_output, BUF_SIZE);

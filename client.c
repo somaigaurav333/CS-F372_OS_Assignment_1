@@ -86,7 +86,7 @@ int main(void)
 
             if (msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0) == -1)
             {
-                perror("msgsnd");
+                perror("Failed to send message");
                 exit(EXIT_FAILURE);
             }
 
@@ -95,7 +95,7 @@ int main(void)
 
             if ((msgrcv(msg_q_id, &msg_rcv, sizeof(msg_rcv), msg_rcv_id, 0)) == -1)
             {
-                perror("msgrcv error ");
+                perror("Failed to receive message");
                 printf("%d\n", errno);
                 exit(EXIT_FAILURE);
             }
@@ -114,7 +114,7 @@ int main(void)
             strncpy(msg_snd.msg.text, filename, BUF_SIZE);
             if (msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0) == -1)
             {
-                perror("msgsnd");
+                perror("Failed to send message");
                 exit(EXIT_FAILURE);
             }
 
@@ -123,7 +123,7 @@ int main(void)
 
             if ((msgrcv(msg_q_id, &msg_rcv, sizeof(msg_rcv), msg_rcv_id, 0)) == -1)
             {
-                perror("msgrcv error ");
+                perror("Failed to receive message");
                 printf("%d\n", errno);
                 exit(EXIT_FAILURE);
             }
@@ -142,7 +142,7 @@ int main(void)
             strncpy(msg_snd.msg.text, filename, BUF_SIZE);
             if (msgsnd(msg_q_id, &msg_snd, sizeof(msg_snd), 0) == -1)
             {
-                perror("msgsnd");
+                perror("Failed to send message");
                 exit(EXIT_FAILURE);
             }
 
@@ -151,7 +151,7 @@ int main(void)
 
             if ((msgrcv(msg_q_id, &msg_rcv, sizeof(msg_rcv), msg_rcv_id, 0)) == -1)
             {
-                perror("msgrcv error ");
+                perror("Failed to receive message");
                 printf("%d\n", errno);
                 exit(EXIT_FAILURE);
             }
