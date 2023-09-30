@@ -20,7 +20,14 @@ struct message
     char text[BUF_SIZE];
 };
 
-// Message Queue Buffer
+/*
+    Message Queue Buffer
+
+    Client  ->  Server - mtype = 1
+    Cleanup ->  Server - mtype = 1, client_id = 0, choice = 0
+    Server  ->  Client - mtype = 2 + client_id
+
+*/
 struct msg_buf
 {
     long mtype;
@@ -79,6 +86,7 @@ int main(void)
         exit(EXIT_FAILURE);
     }
 
+    // Create the message Queue for IPC
     if ((msg_q_id = msgget(key, PERMS | IPC_CREAT)) == -1)
     {
         perror("Failed to connect to Message Queue\n");
@@ -104,6 +112,8 @@ int main(void)
         msgctl(msg_q_id, IPC_RMID, NULL);
         exit(EXIT_FAILURE);
     }
+
+    printf("Server started... \n");
 
     while (pid > 0)
     {
